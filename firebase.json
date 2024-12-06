@@ -24,7 +24,7 @@
     },
     "ui": {
       "enabled": true,
-      "port": 3030
+      "port": 3033
     },
     "singleProjectMode": true
   }

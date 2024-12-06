@@ -28,7 +28,7 @@ export const registerAttendance = functions.https.onCall(async (data) => {
     const differenceInMilliseconds = checkOutDate.getTime() - checkInDate.getTime();
     const differenceInMinutes = Math.floor(differenceInMilliseconds / (1000 * 60));
 
-    const attendance: boolean = differenceInMinutes >= 20;
+    const attendance: boolean = differenceInMinutes >= 0;
 
     const result = {
       attendance: attendance,
@@ -46,7 +46,7 @@ export const registerAttendance = functions.https.onCall(async (data) => {
     }
 }); 
 
-export const getStudentsAttendance = functions.https.onCall(async () => {
+export const getStudents = functions.https.onCall(async () => {
   try {
     // Obter dados de `students`
     const studentSnapshot = await db.collection("students").get();
@@ -57,27 +57,34 @@ export const getStudentsAttendance = functions.https.onCall(async () => {
       photo_url: doc.data().photo_url,
     }));
 
-    // Para cada aluno, buscar suas presenças
-    const studentsWithAttendances = await Promise.all(
-      students.map(async (student) => {
-        const attendanceSnapshot = await db
-          .collection("attendance")
-          .where("student_ra", "==", student.ra)
-          .get();
+    console.log("Students: ", students);
 
-        const attendances: Attendance[] = attendanceSnapshot.docs.map((doc) => ({
-          attendance: doc.data().attendance,
-          date: doc.data().date,
-          student_ra: doc.data().student_ra,
-        }));
-
-        return { ...student, attendances };
-      })
-    );
-
-    return studentsWithAttendances;
+    return students;
   } catch (error) {
     console.error("Erro ao buscar dados:", error);
-    throw new Error("Erro ao buscar alunos e presenças.");
+    throw new Error("Erro ao buscar alunos.");
   }
 });
+
+export const getAttendanceByStudent = functions.https.onCall(async (data) => {
+  const studentRA = data.ra;
+
+  try {
+    // Obter dados de `attendance`
+    const attendanceSnapshot = await db.collection("attendance")
+     .where("student_ra", "==", studentRA)
+     .get();
+    const attendances: Attendance[] = attendanceSnapshot.docs.map((doc) => ({
+      attendance: doc.data().attendance,
+      date: doc.data().date,
+      student_ra: doc.data().student_ra,
+    }));
+
+    console.log("Attendance: ", attendances);
+
+    return attendances;
+  } catch (error) {
+    console.error("Erro ao buscar dados:", error);
+    throw new Error("Erro ao buscar presenças.");
+  }
+})
